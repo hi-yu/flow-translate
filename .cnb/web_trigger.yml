@@ -1,0 +1,5 @@
+branch:
+  - buttons:
+      - name: 检查与打包
+        description: 运行检查与测试并构建 ZIP，不同步或发布
+        event: web_trigger_checks

@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "minimum_chrome_version": "120",
+  "name": "译流 · Flow Translate",
+  "version": "0.1.0",
+  "description": "网页原位翻译、Discord 逐条与自动翻译。可在本地 Ollama 和其他翻译接口之间切换。",
+  "permissions": ["storage", "activeTab", "scripting", "contextMenus"],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "https://discord.com/*",
+    "https://ptb.discord.com/*",
+    "https://canary.discord.com/*"
+  ],
+  "optional_host_permissions": ["*://*/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "译流：翻译当前页面" },
+  "options_page": "options.html",
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://discord.com/*",
+        "https://ptb.discord.com/*",
+        "https://canary.discord.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "translate-page": {
+      "suggested_key": { "default": "Alt+Shift+T" },
+      "description": "翻译当前网页 / Discord 当前可见消息"
+    },
+    "restore-page": {
+      "suggested_key": { "default": "Alt+Shift+R" },
+      "description": "移除当前页面的译文"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
+  }
+}

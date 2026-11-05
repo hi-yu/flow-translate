@@ -1,0 +1,41 @@
+{
+  "name": "flow-translate",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Chrome 网页原位翻译与 Discord 消息翻译扩展，支持本地与多家翻译服务。",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm test && npm run build",
+    "package": "npm run build && node scripts/package.mjs",
+    "keygen": "node scripts/signing-key.mjs",
+    "package:crx": "npm run package && node scripts/package-crx.mjs",
+    "release": "node scripts/release.mjs",
+    "test:release": "node --test tests/release/*.test.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/chrome": "^0.1.24",
+    "@types/node": "^22.18.0",
+    "crx3": "1.1.3",
+    "esbuild": "^0.25.10",
+    "happy-dom": "^20.0.10",
+    "prettier": "3.6.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "slate": "0.112.0",
+    "slate-dom": "0.111.0",
+    "slate-history": "0.109.0",
+    "slate-react": "0.112.0",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

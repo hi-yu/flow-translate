@@ -1,0 +1,137 @@
+.install: &install
+  name: 安装构建依赖
+  script: |
+    set -eu
+    apt-get update
+    apt-get install -y --no-install-recommends zip
+    npm ci
+
+.check: &check
+  name: 检查与测试
+  script: |
+    set -eu
+    npm run format:check
+    npm run check
+    npm run test:release
+
+.package: &package
+  name: 构建 ZIP
+  script: npm run package
+
+.prepare: &prepare
+  name: 校验版本并准备同步分支
+  script: node scripts/release-info.mjs
+  exports:
+    version: FLOW_VERSION
+    tag: FLOW_TAG
+    build_tag: FLOW_BUILD_TAG
+    sync_branch: FLOW_SYNC_BRANCH
+    zip: FLOW_ZIP
+    crx: FLOW_CRX
+
+.sync: &sync
+  name: 同步通过检查的代码到 GitHub
+  imports:
+    - https://cnb.cool/root/flow-translate-secrets/-/blob/main/github.yml
+  script: node scripts/sync-github.mjs
+
+.checks: &checks
+  name: 检查与打包
+  docker:
+    image: node:22-bookworm
+  stages:
+    - *install
+    - *check
+    - *package
+
+main:
+  push:
+    - name: 发布构建版并同步 main
+      docker:
+        image: node:22-bookworm
+      lock:
+        key: flow-translate-main-release
+        wait: true
+      stages:
+        - *install
+        - *check
+        - *package
+        - *prepare
+        - name: 准备构建版 Release
+          script: node scripts/package-snapshot.mjs
+        - name: 创建 CNB 构建版 Release
+          type: git:release
+          options:
+            overlying: true
+            tag: $FLOW_BUILD_TAG
+            title: 译流 $FLOW_BUILD_TAG
+            descriptionFromFile: releases/release-notes.md
+            preRelease: true
+        - name: 上传 CNB Release 安装包
+          image: cnbcool/attachments
+          settings:
+            tag: $FLOW_BUILD_TAG
+            attachments:
+              - $FLOW_ZIP
+              - releases/SHA256SUMS
+              - releases/release.json
+        - *sync
+        - name: 同步 GitHub 构建版 Release
+          retry: 3
+          imports:
+            - https://cnb.cool/root/flow-translate-secrets/-/blob/main/github.yml
+          env:
+            FLOW_RELEASE_KIND: build
+          script: node scripts/publish-github.mjs
+
+  pull_request:
+    - *checks
+
+  web_trigger_checks:
+    - *checks
+
+$:
+  push:
+    - *checks
+  pull_request:
+    - *checks
+  web_trigger_checks:
+    - *checks
+
+'v*':
+  tag_push:
+    - name: CNB 发布并同步 GitHub
+      docker:
+        image: node:22-bookworm
+      lock:
+        key: flow-translate-release
+        wait: true
+      stages:
+        - *prepare
+        - *install
+        - *check
+        - *package
+        - name: 签名 CRX 并生成校验文件
+          imports:
+            - https://cnb.cool/root/flow-translate-secrets/-/blob/main/signing.yml
+          script: node scripts/package-crx.mjs
+        - name: 创建或更新 CNB Release
+          type: git:release
+          options:
+            overlying: true
+            title: 译流 $FLOW_TAG
+            descriptionFromFile: releases/release-notes.md
+        - name: 上传 CNB 安装包
+          image: cnbcool/attachments
+          settings:
+            attachments:
+              - $FLOW_ZIP
+              - $FLOW_CRX
+              - releases/SHA256SUMS
+              - releases/release.json
+        - *sync
+        - name: 同步版本标签与 GitHub Release
+          retry: 3
+          imports:
+            - https://cnb.cool/root/flow-translate-secrets/-/blob/main/github.yml
+          script: node scripts/publish-github.mjs

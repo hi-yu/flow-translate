@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>译流 · 接口与偏好</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="options">
+    <div class="settings-shell">
+      <header class="settings-header">
+        <a class="brand" href="options.html"
+          ><img src="icons/48.png" alt="" width="42" height="42" />
+          <div>
+            <h1>译流 <span>Flow Translate</span></h1>
+            <p>网页与会话，按自己的方式读。</p>
+          </div></a
+        ><span class="version">Chrome · 0.1.0</span>
+      </header>
+      <main>
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">翻译工作台</p>
+            <h2>选好接口，再开始阅读。</h2>
+            <p>本地模型优先，也给每一句话留一个更好的译法。</p>
+          </div>
+          <div class="language-field field">
+            <label for="target-language">默认目标语言</label
+            ><select id="target-language"></select>
+          </div>
+        </div>
+        <section class="workspace" aria-label="翻译接口设置">
+          <aside class="provider-sidebar">
+            <div class="section-heading">
+              <h3>翻译接口</h3>
+              <span id="provider-count" class="count"></span>
+            </div>
+            <div id="provider-list" class="provider-list"></div>
+            <div class="add-provider">
+              <label for="preset">添加接口</label
+              ><select id="preset">
+                <option value="ollama">本地 Ollama</option>
+                <option value="compatible">OpenAI 兼容 / 自定义</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="qwen">通义千问</option>
+                <option value="deepl">DeepL</option>
+                <option value="gemini">Google Gemini</option></select
+              ><button id="add-provider" class="secondary full">＋ 添加翻译接口</button>
+            </div>
+          </aside>
+          <div class="provider-detail">
+            <div class="detail-heading">
+              <div>
+                <span class="eyebrow" id="provider-tag">本地接口</span>
+                <h3 id="provider-title">本地 Ollama</h3>
+              </div>
+              <button id="set-default" class="secondary">设为默认</button>
+            </div>
+            <form id="provider-form">
+              <div class="field">
+                <label for="provider-name">接口名称</label
+                ><input id="provider-name" maxlength="80" required autocomplete="off" />
+              </div>
+              <div class="field" id="deepl-endpoint-field" hidden>
+                <label for="deepl-endpoint">API 地址</label>
+                <select id="deepl-endpoint">
+                  <option value="free">免费版（https://api-free.deepl.com/v2）</option>
+                  <option value="pro">付费版（https://api.deepl.com/v2）</option>
+                  <option value="custom">自定义</option>
+                </select>
+                <p class="field-hint">选择 API Key 对应的版本，或填写自定义地址。</p>
+              </div>
+              <div class="field" id="provider-url-field">
+                <label for="provider-url" id="provider-url-label">API 根地址</label
+                ><input
+                  id="provider-url"
+                  type="url"
+                  required
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+                <p class="field-hint" id="url-hint">填写到 /v1，扩展会添加 /chat/completions。</p>
+              </div>
+              <div class="field" id="model-field">
+                <label for="provider-model" id="model-label">模型名称</label>
+                <div class="input-action model-action">
+                  <input
+                    id="provider-model"
+                    spellcheck="false"
+                    autocomplete="off"
+                    placeholder="填写服务商提供的模型 ID"
+                    aria-describedby="model-status"
+                  />
+                  <select
+                    id="provider-model-select"
+                    aria-describedby="model-status"
+                    hidden
+                  ></select>
+                  <button
+                    id="fetch-models"
+                    type="button"
+                    title="通过当前接口拉取模型列表"
+                    aria-label="拉取模型列表"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    <span id="fetch-models-label">拉取模型</span>
+                  </button>
+                </div>
+                <div class="model-feedback">
+                  <p id="model-status" class="field-hint" role="status" aria-live="polite"></p>
+                  <button id="manual-model" type="button" class="text-button" hidden>
+                    手动填写
+                  </button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="provider-key">API Key</label>
+                <div class="input-action">
+                  <input
+                    id="provider-key"
+                    type="password"
+                    autocomplete="new-password"
+                    spellcheck="false"
+                    placeholder="粘贴 API Key，仅保存在本机"
+                  /><button id="show-key" type="button" aria-pressed="false">显示</button>
+                </div>
+                <p class="field-hint" id="key-hint">
+                  密钥保存在当前浏览器的扩展存储中，不参与同步，也不会注入网页。
+                </p>
+                <p class="field-hint" id="deepl-key-help" hidden>
+                  获取 API Key：<a
+                    href="https://www.deepl.com/zh/your-account/keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >DeepL 密钥管理页面</a
+                  >
+                </p>
+              </div>
+              <div class="form-actions">
+                <button id="save" class="primary" type="submit">保存接口</button
+                ><button id="test-provider" class="secondary" type="button">测试翻译</button
+                ><button id="delete-provider" class="danger text-button" type="button">
+                  删除接口
+                </button>
+              </div>
+              <p id="form-status" class="status" role="status" aria-live="polite"></p>
+              <blockquote id="test-result" class="test-result" hidden></blockquote>
+            </form>
+          </div>
+        </section>
+        <section class="translation-preferences" aria-label="翻译偏好">
+          <div class="preference-tabs" role="tablist" aria-label="翻译场景">
+            <button
+              type="button"
+              id="web-tab"
+              role="tab"
+              aria-selected="true"
+              aria-controls="web-preferences"
+            >
+              普通网页
+            </button>
+            <button
+              type="button"
+              id="discord-tab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="discord-preferences"
+              tabindex="-1"
+            >
+              Discord
+            </button>
+          </div>
+          <div
+            id="web-preferences"
+            class="preference-panel"
+            role="tabpanel"
+            aria-labelledby="web-tab"
+          >
+            <h3 id="page-auto-title">记住常用网站。</h3>
+            <p class="muted">
+              添加或编辑自动翻译的域名，下次访问时沿用当前接口和目标语言。各个子域名单独设置。
+            </p>
+            <ul id="page-auto-domains" class="domain-list"></ul>
+            <form id="page-domain-form" class="domain-editor">
+              <div class="field">
+                <label for="page-domain-input">网站域名</label>
+                <input
+                  id="page-domain-input"
+                  placeholder="例如 docs.example.com"
+                  required
+                  maxlength="253"
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-describedby="page-domain-hint"
+                />
+              </div>
+              <button id="save-page-domain" class="secondary" type="submit">添加网站</button>
+              <button id="cancel-page-domain" class="text-button" type="button" hidden>
+                取消编辑
+              </button>
+            </form>
+            <p id="page-domain-hint" class="field-hint">
+              只填写域名，不含 https://、路径或通配符。保存时授权该网站的访问权限。
+            </p>
+            <p id="page-auto-status" class="status" role="status" aria-live="polite"></p>
+          </div>
+          <div
+            id="discord-preferences"
+            class="preference-panel"
+            role="tabpanel"
+            aria-labelledby="discord-tab"
+            hidden
+          >
+            <h3>Discord，跟上会话的节奏。</h3>
+            <p>
+              外语消息会自动识别语言，英语优先，每条消息下方都有翻译入口。打开某个频道后，可以单独启用自动翻译；切换频道不会替你开启。译文不满意时，在消息下方换一个接口重译。
+            </p>
+            <div class="inline-actions">
+              <span id="auto-summary" class="muted">自动翻译默认关闭</span
+              ><button id="disable-auto" class="text-button">关闭所有频道的自动翻译</button>
+            </div>
+            <ul
+              id="discord-auto-channels"
+              class="domain-list channel-list"
+              aria-label="已开启自动翻译的频道"
+            ></ul>
+            <p id="discord-auto-status" class="status" role="status" aria-live="polite"></p>
+            <div class="field">
+              <label for="discord-display-mode">Discord 消息显示方式</label>
+              <select id="discord-display-mode">
+                <option value="bilingual">双语对照</option>
+                <option value="translation-only">仅显示译文</option>
+              </select>
+              <p class="field-hint">译文完成后生效，可随时切回显示原文。</p>
+            </div>
+            <div class="field">
+              <label for="outgoing-target-language">发送前翻译的默认语言</label>
+              <select id="outgoing-target-language"></select>
+            </div>
+          </div>
+        </section>
+        <section class="privacy-note">
+          <h3>只翻译你选择的内容。</h3>
+          <p>
+            默认在本机处理。选择远程接口时，待翻译内容会发送给该服务商。不会读取 Discord
+            账号令牌，也不会自动发送消息。
+          </p>
+          <button id="clear-cache" class="text-button">清除本次会话的翻译缓存</button>
+        </section>
+        <footer class="settings-footer">
+          <span>Alt + Shift + T 翻译页面　·　Alt + Shift + R 移除译文</span>
+          <nav class="repository-links" aria-label="项目仓库">
+            <span>项目仓库</span>
+            <a
+              href="https://github.com/hi-yu/flow-translate"
+              target="_blank"
+              rel="noopener noreferrer"
+              >GitHub</a
+            >
+            <a href="https://cnb.cool/root/flow-translate" target="_blank" rel="noopener noreferrer"
+              >CNB</a
+            >
+          </nav>
+        </footer>
+      </main>
+    </div>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

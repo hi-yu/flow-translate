@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        font: 16px system-ui;
+        padding: 40px;
+      }
+      button {
+        padding: 12px;
+      }
+      [popover] {
+        inset: 100px auto auto 48px;
+        margin: 0;
+        padding: 8px;
+        background: #25292e;
+        color: white;
+        border: 0;
+        border-radius: 6px;
+      }
+      #css-tip {
+        display: none;
+      }
+      #css-trigger:hover + #css-tip,
+      #css-trigger:focus + #css-tip {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Primer React label tooltips intentionally keep aria-hidden even while open. -->
+    <button id="repositories" aria-labelledby="primer-tip">仓库</button>
+    <span id="primer-tip" data-component="Tooltip" aria-hidden="true" popover="manual"
+      >All repositories</span
+    >
+    <button id="dynamic-trigger">详情</button>
+    <button id="css-trigger">刷新</button>
+    <span id="css-tip" role="tooltip" aria-hidden="true">Refresh</span>
+    <div aria-hidden="true"><span role="tooltip">Private hidden text</span></div>
+    <script>
+      const trigger = document.querySelector('#repositories');
+      const tip = document.querySelector('#primer-tip');
+      window.originalTooltipNode = tip.firstChild;
+      window.repositoryClicks = 0;
+      trigger.addEventListener('mouseenter', () => tip.showPopover());
+      trigger.addEventListener('mouseleave', () => tip.hidePopover());
+      trigger.addEventListener('focus', () => tip.showPopover());
+      trigger.addEventListener('blur', () => tip.hidePopover());
+      trigger.addEventListener('click', () => window.repositoryClicks++);
+      const dynamic = document.querySelector('#dynamic-trigger');
+      dynamic.addEventListener('mouseenter', () => {
+        const node = document.createElement('div');
+        node.id = 'dynamic-tip';
+        node.setAttribute('role', 'tooltip');
+        node.setAttribute('aria-hidden', 'true');
+        node.textContent = 'slow original tooltip';
+        document.body.append(node);
+      });
+      dynamic.addEventListener('mouseleave', () =>
+        document.querySelector('#dynamic-tip')?.remove(),
+      );
+    </script>
+  </body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en" class="theme-dark">
+  <head>
+    <meta charset="utf-8" />
+    <title>Discord fixture / engineering</title>
+    <style>
+      body {
+        font: 16px/1.5 system-ui;
+        margin: 0;
+        color: #dce1e9;
+        background: #313338;
+      }
+      aside {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 210px;
+        background: #2b2d31;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      main {
+        margin-left: 210px;
+        padding: 24px 38px;
+        max-width: 1030px;
+      }
+      header {
+        border-bottom: 1px solid #444;
+        padding-bottom: 20px;
+      }
+      ol {
+        padding: 0;
+        list-style: none;
+      }
+      li {
+        padding: 18px 0;
+      }
+      h3 {
+        font-size: 14px;
+        color: #e3e5e8;
+        margin: 0 0 5px;
+      }
+      time {
+        font-weight: 400;
+        font-size: 11px;
+        color: #b5bac1;
+        margin-left: 12px;
+      }
+      code {
+        background: #242429;
+        padding: 3px;
+        border-radius: 3px;
+      }
+      [contenteditable] {
+        margin-top: 24px;
+        padding: 18px;
+        background: #383a40;
+        border-radius: 9px;
+      }
+      .avatar {
+        width: 34px;
+        height: 34px;
+        float: left;
+        margin-right: 15px;
+        border-radius: 50%;
+        background: #5b6e9b;
+      }
+      .message {
+        margin-left: 49px;
+      }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <strong>Product studio</strong>
+      <p># engineering</p>
+      <p># announcements</p>
+    </aside>
+    <main>
+      <header># engineering</header>
+      <ol id="chat-list" aria-label="Messages">
+        <li id="chat-messages-1-101">
+          <div class="avatar"></div>
+          <div class="message">
+            <h3>Ada<time>Today at 10:24</time></h3>
+            <div id="message-content-101">Our next release ships on Friday.</div>
+          </div>
+        </li>
+        <li id="chat-messages-1-102">
+          <div class="avatar"></div>
+          <div class="message">
+            <h3>Lin<time>Today at 10:25</time></h3>
+            <div id="message-content-102">Can you review the pull request?</div>
+          </div>
+        </li>
+        <li id="chat-messages-1-103">
+          <div class="avatar"></div>
+          <div class="message">
+            <h3>Mia<time>Today at 10:26</time></h3>
+            <div id="message-content-103">好的，我来检查。</div>
+          </div>
+        </li>
+      </ol>
+      <form
+        id="message-form"
+        class="channelTextArea_fixture"
+        style="display: flex; align-items: center; gap: 8px"
+      >
+        <div
+          contenteditable="true"
+          role="textbox"
+          aria-multiline="true"
+          aria-label="Message engineering"
+          style="flex: 1; min-width: 0"
+        >
+          Do not translate this private draft.
+        </div>
+        <div class="buttons_fixture" style="display: flex; align-items: center">
+          <button type="button" aria-label="Add emoji">☺</button>
+          <button type="button" aria-label="GIF">GIF</button>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

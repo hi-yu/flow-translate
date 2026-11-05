@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>译流</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="popup">
+    <header class="brand">
+      <img src="icons/48.png" alt="" width="36" height="36" />
+      <div>
+        <h1>译流 <span>Flow Translate</span></h1>
+        <p>留在原文里，读懂下一句。</p>
+      </div>
+      <button id="open-settings" class="icon-button" title="接口与偏好设置" aria-label="打开设置">
+        设置
+      </button>
+    </header>
+    <main>
+      <section class="context">
+        <span class="eyebrow" id="context-label">当前网页</span
+        ><strong id="site-name">正在读取页面…</strong>
+        <p id="context-hint">在原位置显示译文，保留布局和交互。</p>
+      </section>
+      <div class="translation-fields">
+        <div class="field">
+          <label for="provider">翻译接口</label
+          ><select id="provider"></select>
+        </div>
+        <div class="field">
+          <label for="language">翻译为</label
+          ><select id="language"></select>
+        </div>
+      </div>
+      <p class="field-hint">原文自动识别，英语优先；也支持其他语言。</p>
+      <div class="auto-box" id="discord-controls" hidden>
+        <label class="switch-row"
+          ><span><strong>此频道自动翻译</strong><small>可见消息与新消息，按需翻译</small></span
+          ><input id="discord-auto" type="checkbox" role="switch"
+        /></label>
+      </div>
+      <div class="auto-box" id="page-auto-controls" hidden>
+        <label class="switch-row"
+          ><span><strong>自动翻译此域名</strong><small id="page-auto-domain"></small></span
+          ><input id="page-auto" type="checkbox" role="switch"
+        /></label>
+      </div>
+      <details id="draft-panel" class="draft-panel" hidden>
+        <summary>发送前翻译</summary>
+        <div class="field">
+          <label for="outgoing-language">将输入框草稿翻译为</label>
+          <select id="outgoing-language"></select>
+          <p class="field-hint">使用上方选中的接口，确认后替换草稿。</p>
+        </div>
+        <button id="translate-draft" class="secondary full">翻译输入框草稿</button>
+        <div id="draft-preview" class="field" hidden>
+          <label for="draft-output">发送前译文</label>
+          <textarea id="draft-output" rows="4" readonly></textarea>
+          <button id="apply-draft" class="primary full" disabled>替换输入框草稿</button>
+          <button id="copy-draft" class="quiet full" disabled>复制译文</button>
+        </div>
+        <p id="draft-status" class="status" role="status" aria-live="polite"></p>
+      </details>
+    </main>
+    <section class="popup-actions" aria-label="翻译与恢复">
+      <div class="popup-action-row">
+        <button id="translate" class="primary full">翻译此网页</button>
+        <button id="restore" class="secondary full">显示原文</button>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+    <footer class="popup-footer">
+      <span id="privacy-note">内容仅发送给你选中的接口</span
+      ><button id="test" class="text-button">测试连接</button>
+    </footer>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
