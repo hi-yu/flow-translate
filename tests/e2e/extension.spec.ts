@@ -341,6 +341,7 @@ test.beforeAll(async () => {
   context = await chromium.launchPersistentContext(profile, {
     channel: 'chromium',
     headless: true,
+    ignoreDefaultArgs: ['--disable-back-forward-cache'],
     viewport: { width: 1280, height: 900 },
     args: [
       '--enable-unsafe-extension-debugging',
@@ -445,6 +446,112 @@ test.afterAll(async () => {
   await context?.close();
   if (server) await new Promise<void>((resolve) => server.close(() => resolve()));
   if (profile) await rm(profile, { recursive: true, force: true });
+});
+
+test('handles translation port disconnection when a page enters the back-forward cache', async () => {
+  const page = await context.newPage();
+  const manager = await context.newPage();
+  const worker = context.serviceWorkers()[0]!;
+  const errors: string[] = [];
+  const onConsole = (message: { text(): string }) => errors.push(message.text());
+  worker.on('console', onConsole);
+  page.on('console', onConsole);
+  try {
+    await manager.goto('chrome://extensions/');
+    await manager.evaluate(async () => {
+      const api = (
+        chrome as unknown as {
+          developerPrivate: {
+            updateProfileConfiguration(update: { inDeveloperMode: boolean }): Promise<void>;
+          };
+        }
+      ).developerPrivate;
+      await api.updateProfileConfiguration({ inDeveloperMode: true });
+    });
+    await options.locator('#provider-url').fill(baseUrl + '/v1');
+    await options.locator('#provider-key').fill('test-key');
+    await options.getByRole('button', { name: '保存接口', exact: true }).click();
+    await expect(options.locator('#form-status')).toContainText('已保存');
+    await page.addInitScript(() => {
+      window.addEventListener('pageshow', (event) => {
+        sessionStorage.setItem('flow-test-restored', String(event.persisted));
+      });
+    });
+    await page.goto(baseUrl + '/console');
+    await expect(page.locator('body')).toHaveAttribute('data-ready', 'true');
+    const before = requests.length;
+    await action(page, 'TRANSLATE_PAGE');
+    await expect(page.locator('#stream')).toHaveText('正在逐步');
+    await page.goto(baseUrl + '/tooltips');
+    await page.goBack({ waitUntil: 'commit' });
+    expect(await page.evaluate(() => sessionStorage.getItem('flow-test-restored'))).toBe('true');
+    await expect
+      .poll(() =>
+        requests
+          .slice(before)
+          .some((request) => request.text.includes('deliberately streamed') && request.completed),
+      )
+      .toBe(true);
+    await action(page, 'TRANSLATE_PAGE');
+    await expect(page.locator('#stream')).toHaveText('正在逐步显示的译文。');
+    const runtimeErrors = await manager.evaluate(async (id) => {
+      const api = (
+        chrome as unknown as {
+          developerPrivate: {
+            getExtensionsInfo(options: {
+              includeDisabled: boolean;
+              includeTerminated: boolean;
+            }): Promise<{ id: string; runtimeErrors?: { message: string }[] }[]>;
+          };
+        }
+      ).developerPrivate;
+      const entries = await api.getExtensionsInfo({
+        includeDisabled: true,
+        includeTerminated: true,
+      });
+      return (
+        entries.find((entry) => entry.id === id)?.runtimeErrors?.map((error) => error.message) ?? []
+      );
+    }, extensionId);
+    expect(runtimeErrors.filter((message) => message.includes('back/forward cache'))).toEqual([]);
+    expect(errors.filter((message) => message.includes('Unchecked runtime.lastError'))).toEqual([]);
+  } finally {
+    worker.off('console', onConsole);
+    page.off('console', onConsole);
+    await page.close();
+    await manager.close();
+  }
+});
+
+test('resumes Discord automatic translation after back-forward cache restoration', async () => {
+  const page = await context.newPage();
+  try {
+    await page.addInitScript(() => {
+      window.addEventListener('pageshow', (event) => {
+        sessionStorage.setItem('flow-test-discord-restored', String(event.persisted));
+      });
+    });
+    await page.goto('https://discord.com/channels/98/100');
+    await page.evaluate(() => {
+      document.querySelector('#message-content-101')!.textContent = 'A slow original message.';
+    });
+    const before = requests.length;
+    await setAuto(page, true);
+    await expect
+      .poll(() => requests.slice(before).some((request) => request.text.includes('slow original')))
+      .toBe(true);
+    await page.goto('https://example.org/bfcache');
+    await page.goBack({ waitUntil: 'commit' });
+    expect(await page.evaluate(() => sessionStorage.getItem('flow-test-discord-restored'))).toBe(
+      'true',
+    );
+    await expect(page.locator('flow-translation').first().locator('.output')).not.toBeEmpty();
+    await expect.poll(() => channelAuto(page)).toBe(true);
+    await expect(page.locator('flow-translation .error')).toHaveCount(0);
+    await setAuto(page, false);
+  } finally {
+    await page.close();
+  }
 });
 
 test('configures multiple providers without publishing credentials to content settings', async () => {

@@ -1,6 +1,6 @@
 import { collectDiscordMessages, readableText, shouldTranslate, splitText, visible } from './dom';
 import { discordChannel, isDiscordHost } from './settings';
-import { send } from './messaging';
+import { keepTranslationAlive, send } from './messaging';
 import { detectSourceLanguage, sourceLanguageLabel } from './source-language';
 import { PageTranslator, type PageOptions } from './page-translator';
 import { DiscordDraft } from './discord-draft';
@@ -71,6 +71,7 @@ class Translator {
   private epoch = 0;
   private progressHandlers = new Map<string, (text: string) => void>();
   private notice = '';
+  private resumePageAfterCache = false;
   private draft = new DiscordDraft();
   private composer?: DiscordComposer;
   private pageObserver = new IntersectionObserver(
@@ -206,6 +207,27 @@ class Translator {
       { capture: true, passive: true, signal: this.events.signal },
     );
     window.addEventListener('resize', scheduleScan, { signal: this.events.signal });
+    window.addEventListener(
+      'pagehide',
+      (event) => {
+        if (!event.persisted) return;
+        this.resumePageAfterCache = Boolean(this.page?.translatingPage);
+        this.epoch++;
+        for (const task of this.queue) task.entry.queued = false;
+        this.queue = [];
+      },
+      { signal: this.events.signal },
+    );
+    window.addEventListener(
+      'pageshow',
+      (event) => {
+        if (!event.persisted || !this.active) return;
+        if (this.resumePageAfterCache) this.page?.start();
+        this.resumePageAfterCache = false;
+        this.scan();
+      },
+      { signal: this.events.signal },
+    );
     if (!this.discord) {
       for (const event of ['click', 'keydown', 'pointerover', 'focusin'])
         document.addEventListener(
@@ -324,14 +346,7 @@ class Translator {
     partial: (text: string) => void,
     current: () => boolean,
   ): Promise<string> {
-    const port = chrome.runtime.connect({ name: 'flow-translation' });
-    const keepAlive = setInterval(() => {
-      try {
-        port.postMessage({ alive: true });
-      } catch {
-        /* The request reports invalidation. */
-      }
-    }, 15_000);
+    const stopKeepAlive = keepTranslationAlive();
     const outputs: string[] = [];
     try {
       for (const chunk of splitText(text)) {
@@ -361,8 +376,7 @@ class Translator {
       }
       return outputs.join('\n\n');
     } finally {
-      clearInterval(keepAlive);
-      port.disconnect();
+      stopKeepAlive();
     }
   }
 
@@ -564,19 +578,12 @@ class Translator {
   private async drain(): Promise<void> {
     if (this.running) return;
     this.running = true;
-    let port: chrome.runtime.Port | undefined;
+    let stopKeepAlive: (() => void) | undefined;
     try {
-      port = chrome.runtime.connect({ name: 'flow-translation' });
+      stopKeepAlive = keepTranslationAlive();
     } catch {
       /* The visible request below reports an invalidated extension. */
     }
-    const keepAlive = setInterval(() => {
-      try {
-        port?.postMessage({ alive: true });
-      } catch {
-        /* Pending requests surface disconnection. */
-      }
-    }, 15_000);
     try {
       while (this.queue.length) {
         const task = this.queue.shift()!;
@@ -590,8 +597,7 @@ class Translator {
         await this.translateEntry(task.entry, task.automatic, task.force);
       }
     } finally {
-      clearInterval(keepAlive);
-      port?.disconnect();
+      stopKeepAlive?.();
       this.running = false;
     }
   }

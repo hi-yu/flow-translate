@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "minimum_chrome_version": "120",
   "name": "译流 · Flow Translate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "网页原位翻译、Discord 逐条与自动翻译。可在本地 Ollama 和其他翻译接口之间切换。",
   "permissions": ["storage", "activeTab", "scripting", "contextMenus"],
   "host_permissions": [

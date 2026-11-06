@@ -56,6 +56,10 @@ export class PageTranslator {
     };
   }
 
+  get translatingPage(): boolean {
+    return this.mode === 'page';
+  }
+
   configure(options: PageOptions): void {
     const changed = JSON.stringify(options) !== JSON.stringify(this.options);
     this.options = options;

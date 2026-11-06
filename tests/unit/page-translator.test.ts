@@ -41,6 +41,18 @@ beforeEach(() => {
 afterEach(() => translator.restore());
 
 describe('webpage translation lifecycle', () => {
+  it('distinguishes full-page translation from selection-only translation', () => {
+    const text = document.querySelector('p')!.firstChild!;
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    translator.selection(range);
+    expect(translator.translatingPage).toBe(false);
+    translator.start();
+    expect(translator.translatingPage).toBe(true);
+    translator.restore();
+    expect(translator.translatingPage).toBe(false);
+  });
+
   it('retains translated backgrounds during temporary accessibility hiding without reading new hidden sources', async () => {
     document.body.innerHTML = '<main><p>Running</p><input placeholder="Title"></main>';
     const main = document.querySelector('main')!;

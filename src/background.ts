@@ -15,6 +15,7 @@ import { listProviderModels } from './providers';
 import { TranslationEngine, type CacheSnapshot } from './translation-engine';
 import { discordSenderChannel } from './discord-context';
 import { authorizedPageDomains, registerPageDomains } from './page-auto';
+import { onPortDisconnect } from './messaging';
 import type { Message, PublicSettings, Settings, TranslationInput } from './types';
 
 let cacheWrites = Promise.resolve();
@@ -292,8 +293,10 @@ chrome.runtime.onMessage.addListener((message: Message, sender, respond) => {
 
 // Port messages keep MV3 alive while the content script waits for queued work.
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === 'flow-translation' && port.sender?.id === chrome.runtime.id)
+  if (port.name === 'flow-translation' && port.sender?.id === chrome.runtime.id) {
     port.onMessage.addListener(() => {});
+    onPortDisconnect(port, () => {});
+  }
 });
 
 async function inject(tabId: number): Promise<void> {

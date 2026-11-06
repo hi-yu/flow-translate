@@ -1,6 +1,6 @@
 {
   "name": "flow-translate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Chrome 网页原位翻译与 Discord 消息翻译扩展，支持本地与多家翻译服务。",

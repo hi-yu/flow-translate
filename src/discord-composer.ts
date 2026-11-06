@@ -1,7 +1,7 @@
 import { DiscordDraft, draftEditors } from './discord-draft';
 import { discordChannel, LANGUAGES } from './settings';
 import { sourceLanguageLabel } from './source-language';
-import { send } from './messaging';
+import { keepTranslationAlive, send } from './messaging';
 import type { DraftSnapshot, PublicSettings, TranslationResult } from './types';
 
 const STYLE = `
@@ -372,8 +372,7 @@ export class DiscordComposer {
     entry.status.setAttribute('aria-live', 'polite');
     entry.panel.append(output, actions, entry.status);
     this.status(entry, '正在翻译当前草稿…');
-    let port: chrome.runtime.Port | undefined;
-    let keepAlive: ReturnType<typeof setInterval> | undefined;
+    let stopKeepAlive: (() => void) | undefined;
     const current = () =>
       this.active() &&
       entry.host.isConnected &&
@@ -381,14 +380,7 @@ export class DiscordComposer {
       this.channel === discordChannel(location.pathname);
     try {
       entry.snapshot = entry.draft.read(entry.editor);
-      port = chrome.runtime.connect({ name: 'flow-translation' });
-      keepAlive = setInterval(() => {
-        try {
-          port?.postMessage({ alive: true });
-        } catch {
-          /* The request reports disconnection. */
-        }
-      }, 15_000);
+      stopKeepAlive = keepTranslationAlive();
       const result = await send<TranslationResult>({
         type: 'TRANSLATE',
         input: {
@@ -420,8 +412,7 @@ export class DiscordComposer {
       if (current())
         this.status(entry, error instanceof Error ? error.message : '翻译失败，请重试。', true);
     } finally {
-      clearInterval(keepAlive);
-      port?.disconnect();
+      stopKeepAlive?.();
       if (current()) {
         entry.busy = false;
         this.label(entry);
